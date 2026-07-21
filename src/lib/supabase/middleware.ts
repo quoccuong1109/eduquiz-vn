@@ -23,28 +23,28 @@ export async function updateSession(request: NextRequest) {
     }
   )
 
-  // getSession đọc từ cookie (không gọi mạng) → nhanh hơn getUser()
-  const {
-    data: { session },
-  } = await supabase.auth.getSession()
-  const user = session?.user ?? null
-
-  // Bảo vệ các route yêu cầu đăng nhập
+  const pathname = request.nextUrl.pathname
+  const isAuthPage = pathname === '/login' || pathname === '/register'
   const protectedRoutes = ['/dashboard', '/teacher', '/student', '/exam']
-  const isProtected = protectedRoutes.some(route => request.nextUrl.pathname.startsWith(route))
+  const isProtected = protectedRoutes.some(route => pathname.startsWith(route))
 
-  if (isProtected && !user) {
-    const url = request.nextUrl.clone()
-    url.pathname = '/login'
-    url.searchParams.set('redirectTo', request.nextUrl.pathname)
-    return NextResponse.redirect(url)
-  }
-
-  // Redirect đã đăng nhập ra khỏi auth pages
-  if (user && (request.nextUrl.pathname === '/login' || request.nextUrl.pathname === '/register')) {
-    const url = request.nextUrl.clone()
-    url.pathname = '/dashboard'
-    return NextResponse.redirect(url)
+  if (isAuthPage) {
+    // Trên auth pages: xác thực session thật sự (có gọi mạng) để tránh redirect loop
+    const { data: { user } } = await supabase.auth.getUser()
+    if (user) {
+      const url = request.nextUrl.clone()
+      url.pathname = '/dashboard'
+      return NextResponse.redirect(url)
+    }
+  } else if (isProtected) {
+    // Trên protected routes: đọc cookie nhanh, không gọi mạng
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session) {
+      const url = request.nextUrl.clone()
+      url.pathname = '/login'
+      url.searchParams.set('redirectTo', pathname)
+      return NextResponse.redirect(url)
+    }
   }
 
   return supabaseResponse
