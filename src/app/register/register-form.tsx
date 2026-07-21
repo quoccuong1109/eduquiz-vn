@@ -45,7 +45,8 @@ export function RegisterForm() {
       toast.success('Đăng ký thành công! Vui lòng kiểm tra email để xác nhận tài khoản.')
       router.push('/login')
     } catch (error: unknown) {
-      toast.error(error instanceof Error ? error.message : 'Đăng ký thất bại')
+      const msg = error instanceof Error ? error.message : (typeof error === 'string' ? error : JSON.stringify(error))
+      toast.error(msg || 'Đăng ký thất bại')
     } finally {
       setLoading(false)
     }
