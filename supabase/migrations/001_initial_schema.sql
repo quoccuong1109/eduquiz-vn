@@ -155,18 +155,29 @@ CREATE INDEX idx_class_students_student ON public.class_students(student_id);
 -- =====================================================
 -- TRIGGERS: Tự động tạo user profile khi đăng ký
 -- =====================================================
-CREATE OR REPLACE FUNCTION public.handle_new_user()
-RETURNS TRIGGER AS $$
+CREATE FUNCTION public.handle_new_user()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_role public.user_role := 'student';
+  v_role_str TEXT;
 BEGIN
+  v_role_str := NEW.raw_user_meta_data->>'role';
+  IF v_role_str IN ('teacher', 'student', 'admin') THEN
+    v_role := v_role_str::public.user_role;
+  END IF;
   INSERT INTO public.users (id, full_name, role)
   VALUES (
     NEW.id,
-    COALESCE(NEW.raw_user_meta_data->>'full_name', NEW.email),
-    COALESCE((NEW.raw_user_meta_data->>'role')::user_role, 'student')
+    COALESCE(NEW.raw_user_meta_data->>'full_name', NEW.email, 'User'),
+    v_role
   );
   RETURN NEW;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$;
 
 CREATE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
