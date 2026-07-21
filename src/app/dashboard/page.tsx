@@ -11,11 +11,25 @@ export default async function DashboardPage() {
   const { data: { user: authUser } } = await supabase.auth.getUser()
   if (!authUser) redirect('/login')
 
-  const { data: profile } = await supabase
+  let { data: profile } = await supabase
     .from('users')
     .select('*')
     .eq('id', authUser.id)
     .single()
+
+  // Trigger may have missed creating the profile — create it now as fallback
+  if (!profile) {
+    const { data: newProfile } = await supabase
+      .from('users')
+      .upsert({
+        id: authUser.id,
+        full_name: authUser.user_metadata?.full_name || authUser.email || 'User',
+        role: authUser.user_metadata?.role || 'student',
+      })
+      .select('*')
+      .single()
+    profile = newProfile
+  }
 
   if (!profile) redirect('/login')
 
