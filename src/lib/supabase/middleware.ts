@@ -23,9 +23,11 @@ export async function updateSession(request: NextRequest) {
     }
   )
 
+  // getSession đọc từ cookie (không gọi mạng) → nhanh hơn getUser()
   const {
-    data: { user },
-  } = await supabase.auth.getUser()
+    data: { session },
+  } = await supabase.auth.getSession()
+  const user = session?.user ?? null
 
   // Bảo vệ các route yêu cầu đăng nhập
   const protectedRoutes = ['/dashboard', '/teacher', '/student', '/exam']
