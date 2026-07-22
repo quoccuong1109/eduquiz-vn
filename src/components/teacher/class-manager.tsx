@@ -34,13 +34,14 @@ export function ClassManager({ userId }: ClassManagerProps) {
 
   async function loadClasses() {
     setLoading(true)
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('classes')
       .select('*')
       .eq('teacher_id', userId)
       .order('created_at', { ascending: false })
 
-    // Lấy số học sinh từng lớp
+    console.log('[classes] userId:', userId, 'data:', JSON.stringify(data), 'error:', JSON.stringify(error))
+
     const classesWithCount = await Promise.all((data || []).map(async (c) => {
       const { count } = await supabase
         .from('class_students')
