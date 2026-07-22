@@ -7,8 +7,12 @@ import {
   BookOpen, Clock, BarChart2, Users, Shuffle, Shield,
   ArrowRight, CheckCircle2, GraduationCap, Trophy,
 } from 'lucide-react'
+import { createClient } from '@/lib/supabase/server'
 
-export default function LandingPage() {
+export default async function LandingPage() {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+
   return (
     <div className="min-h-screen bg-white">
       {/* HEADER */}
@@ -26,8 +30,14 @@ export default function LandingPage() {
             <a href="#subjects" className="hover:text-blue-600 transition-colors">Môn học</a>
           </nav>
           <div className="flex items-center gap-3">
-            <Link href="/login" className={buttonVariants({ variant: 'ghost' })}>Đăng nhập</Link>
-            <Link href="/register" className={cn(buttonVariants(), 'bg-blue-600 hover:bg-blue-700 text-white')}>Đăng ký miễn phí</Link>
+            {user ? (
+              <Link href="/dashboard" className={cn(buttonVariants(), 'bg-blue-600 hover:bg-blue-700 text-white')}>Vào Dashboard</Link>
+            ) : (
+              <>
+                <Link href="/login" className={buttonVariants({ variant: 'ghost' })}>Đăng nhập</Link>
+                <Link href="/register" className={cn(buttonVariants(), 'bg-blue-600 hover:bg-blue-700 text-white')}>Đăng ký miễn phí</Link>
+              </>
+            )}
           </div>
         </div>
       </header>
