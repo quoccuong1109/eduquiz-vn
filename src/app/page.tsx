@@ -177,7 +177,7 @@ export default function LandingPage() {
               Đăng ký làm Giáo viên <ArrowRight className="w-4 h-4 ml-2" />
             </Link>
             <Link href="/register?role=student"
-              className={cn(buttonVariants({ variant: 'outline', size: 'lg' }), 'border-white text-white hover:bg-blue-500')}>
+              className={cn(buttonVariants({ variant: 'outline', size: 'lg' }), 'border-2 border-white text-white bg-transparent hover:bg-white/10')}>
               Đăng ký làm Học sinh <ArrowRight className="w-4 h-4 ml-2" />
             </Link>
           </div>
