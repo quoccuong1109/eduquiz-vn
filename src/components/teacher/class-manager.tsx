@@ -34,15 +34,16 @@ export function ClassManager({ userId }: ClassManagerProps) {
 
   async function loadClasses() {
     setLoading(true)
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('classes')
-      .select('*, class_students(count)')
+      .select('*, class_students(student_id)')
       .eq('teacher_id', userId)
       .order('created_at', { ascending: false })
 
+    if (error) console.error('loadClasses error:', error)
     setClasses((data || []).map(c => ({
       ...c,
-      student_count: c.class_students?.[0]?.count || 0,
+      student_count: c.class_students?.length || 0,
     })))
     setLoading(false)
   }
