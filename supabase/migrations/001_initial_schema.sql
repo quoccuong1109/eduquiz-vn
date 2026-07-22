@@ -207,12 +207,19 @@ CREATE POLICY "Users xem profile của mình" ON public.users
 CREATE POLICY "Users cập nhật profile của mình" ON public.users
   FOR UPDATE USING (auth.uid() = id);
 
+-- Helper function to check role without triggering RLS recursion
+CREATE OR REPLACE FUNCTION public.get_my_role()
+RETURNS TEXT
+LANGUAGE SQL
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT role::TEXT FROM public.users WHERE id = auth.uid();
+$$;
+
 CREATE POLICY "Teacher/Admin xem tất cả users" ON public.users
   FOR SELECT USING (
-    EXISTS (
-      SELECT 1 FROM public.users u
-      WHERE u.id = auth.uid() AND u.role IN ('teacher', 'admin')
-    )
+    public.get_my_role() IN ('teacher', 'admin')
   );
 
 -- =====================================================
@@ -300,24 +307,41 @@ CREATE POLICY "Teacher quản lý câu hỏi trong đề" ON public.exam_questio
 CREATE POLICY "Teacher quản lý lớp của mình" ON public.classes
   FOR ALL USING (teacher_id = auth.uid());
 
-CREATE POLICY "Học sinh xem lớp của mình" ON public.classes
-  FOR SELECT USING (
-    EXISTS (
-      SELECT 1 FROM public.class_students
-      WHERE class_id = classes.id AND student_id = auth.uid()
-    )
+-- Helper: check if current user is student in a class (bypasses RLS to avoid recursion)
+CREATE OR REPLACE FUNCTION public.is_student_in_class(p_class_id UUID)
+RETURNS BOOLEAN
+LANGUAGE SQL
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT EXISTS (
+    SELECT 1 FROM public.class_students
+    WHERE class_id = p_class_id AND student_id = auth.uid()
   );
+$$;
+
+CREATE POLICY "Học sinh xem lớp của mình" ON public.classes
+  FOR SELECT USING (public.is_student_in_class(id));
 
 -- =====================================================
 -- RLS POLICIES - CLASS_STUDENTS
 -- =====================================================
-CREATE POLICY "Teacher xem học sinh trong lớp" ON public.class_students
-  FOR SELECT USING (
-    EXISTS (
-      SELECT 1 FROM public.classes
-      WHERE id = class_id AND teacher_id = auth.uid()
-    )
+
+-- Helper: check if current user is teacher of a class (bypasses RLS to avoid recursion)
+CREATE OR REPLACE FUNCTION public.is_teacher_of_class(p_class_id UUID)
+RETURNS BOOLEAN
+LANGUAGE SQL
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT EXISTS (
+    SELECT 1 FROM public.classes
+    WHERE id = p_class_id AND teacher_id = auth.uid()
   );
+$$;
+
+CREATE POLICY "Teacher xem học sinh trong lớp" ON public.class_students
+  FOR SELECT USING (public.is_teacher_of_class(class_id));
 
 CREATE POLICY "Học sinh xem thông tin lớp của mình" ON public.class_students
   FOR SELECT USING (student_id = auth.uid());
