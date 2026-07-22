@@ -162,7 +162,9 @@ export function ExamCreator({ userId }: ExamCreatorProps) {
       toast.success('Đã tạo đề thi thành công!')
       router.push('/teacher/exams')
     } catch (error: unknown) {
-      toast.error(error instanceof Error ? error.message : 'Có lỗi khi tạo đề thi')
+      const msg = error instanceof Error ? error.message : (error as { message?: string })?.message
+      toast.error(msg || 'Có lỗi khi tạo đề thi')
+      console.error('Exam create error:', error)
     } finally {
       setSaving(false)
     }
