@@ -31,7 +31,12 @@ export default async function LandingPage() {
           </nav>
           <div className="flex items-center gap-3">
             {user ? (
-              <Link href="/dashboard" className={cn(buttonVariants(), 'bg-blue-600 hover:bg-blue-700 text-white')}>Vào Dashboard</Link>
+              <>
+                <span className="hidden md:block text-sm text-gray-600">
+                  Xin chào, <span className="font-medium text-gray-900">{user.user_metadata?.full_name?.split(' ').pop() || user.email}</span>!
+                </span>
+                <Link href="/dashboard" className={cn(buttonVariants(), 'bg-blue-600 hover:bg-blue-700 text-white')}>Vào Dashboard</Link>
+              </>
             ) : (
               <>
                 <Link href="/login" className={buttonVariants({ variant: 'ghost' })}>Đăng nhập</Link>

@@ -33,7 +33,17 @@ export function LoginForm() {
       router.push(redirectTo)
       router.refresh()
     } catch (error: unknown) {
-      toast.error(error instanceof Error ? error.message : 'Đăng nhập thất bại')
+      const msg = error instanceof Error ? error.message : ''
+      if (msg.includes('Invalid login credentials') || msg.includes('invalid_credentials'))
+        toast.error('Email hoặc mật khẩu không đúng')
+      else if (msg.includes('Email not confirmed'))
+        toast.error('Email chưa được xác nhận, vui lòng kiểm tra hộp thư')
+      else if (msg.includes('Too many requests'))
+        toast.error('Quá nhiều lần thử, vui lòng thử lại sau vài phút')
+      else if (msg.includes('User not found'))
+        toast.error('Không tìm thấy tài khoản với email này')
+      else
+        toast.error(msg || 'Đăng nhập thất bại, vui lòng thử lại')
     } finally {
       setLoading(false)
     }

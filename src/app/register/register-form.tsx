@@ -42,11 +42,20 @@ export function RegisterForm() {
         },
       })
       if (error) throw error
-      toast.success('Đăng ký thành công! Vui lòng kiểm tra email để xác nhận tài khoản.')
-      router.push('/login')
+      toast.success('Đăng ký thành công! Đang chuyển hướng...')
+      router.push('/dashboard')
     } catch (error: unknown) {
       const msg = error instanceof Error ? error.message : (typeof error === 'string' ? error : JSON.stringify(error))
-      toast.error(msg || 'Đăng ký thất bại')
+      if (msg.includes('User already registered') || msg.includes('already been registered'))
+        toast.error('Email này đã được đăng ký, vui lòng đăng nhập')
+      else if (msg.includes('Password should be at least'))
+        toast.error('Mật khẩu phải có ít nhất 6 ký tự')
+      else if (msg.includes('Unable to validate email'))
+        toast.error('Email không hợp lệ')
+      else if (msg.includes('Too many requests'))
+        toast.error('Quá nhiều lần thử, vui lòng thử lại sau vài phút')
+      else
+        toast.error(msg || 'Đăng ký thất bại, vui lòng thử lại')
     } finally {
       setLoading(false)
     }
