@@ -40,7 +40,7 @@ export function ClassManager({ userId }: ClassManagerProps) {
       .eq('teacher_id', userId)
       .order('created_at', { ascending: false })
 
-    if (error) console.error('loadClasses error:', error)
+    if (error) console.error('loadClasses error:', JSON.stringify(error))
     setClasses((data || []).map(c => ({
       ...c,
       student_count: c.class_students?.length || 0,
