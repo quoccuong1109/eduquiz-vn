@@ -12,7 +12,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
-import { GraduationCap, LogOut, User, Settings } from 'lucide-react'
+import { GraduationCap, LogOut, User, Shield } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { User as UserType } from '@/types/database'
 
@@ -49,6 +49,18 @@ export function Navbar({ user }: NavbarProps) {
           <span className="font-bold text-blue-600">EduQuiz VN</span>
         </Link>
 
+        {/* Admin nav */}
+        {user.role === 'admin' && (
+          <nav className="hidden md:flex items-center gap-1">
+            <Link href="/admin" className={cn(buttonVariants({ variant: 'ghost', size: 'sm' }), 'text-purple-600')}>
+              <Shield className="w-3.5 h-3.5 mr-1" /> Quản trị
+            </Link>
+            <Link href="/teacher/exams" className={cn(buttonVariants({ variant: 'ghost', size: 'sm' }))}>Đề thi</Link>
+            <Link href="/teacher/questions" className={cn(buttonVariants({ variant: 'ghost', size: 'sm' }))}>Câu hỏi</Link>
+            <Link href="/teacher/classes" className={cn(buttonVariants({ variant: 'ghost', size: 'sm' }))}>Lớp học</Link>
+          </nav>
+        )}
+
         {/* Teacher nav */}
         {user.role === 'teacher' && (
           <nav className="hidden md:flex items-center gap-1">
@@ -83,6 +95,13 @@ export function Navbar({ user }: NavbarProps) {
                 <User className="w-4 h-4" /> Dashboard
               </Link>
             </DropdownMenuItem>
+            {user.role === 'admin' && (
+              <DropdownMenuItem>
+                <Link href="/admin" className="flex items-center gap-2 w-full text-purple-600">
+                  <Shield className="w-4 h-4" /> Quản trị hệ thống
+                </Link>
+              </DropdownMenuItem>
+            )}
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={handleSignOut} className="text-red-600 cursor-pointer">
               <LogOut className="w-4 h-4 mr-2" /> Đăng xuất
