@@ -10,6 +10,7 @@ export interface User {
   full_name: string
   role: UserRole
   school: string | null
+  email: string | null
   created_at: string
 }
 
