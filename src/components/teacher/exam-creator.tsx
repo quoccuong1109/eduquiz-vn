@@ -13,6 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { toast } from 'sonner'
 import { Plus, X, Shuffle, Loader2, Search } from 'lucide-react'
 import type { Question, Difficulty } from '@/types/database'
+import { CURRICULUM } from '@/lib/curriculum'
 
 const SUBJECTS = [
   { value: 'tin_hoc', label: 'Tin học' },
@@ -39,6 +40,7 @@ export function ExamCreator({ userId }: ExamCreatorProps) {
   const [duration, setDuration] = useState(45)
   const [accessCode, setAccessCode] = useState('')
   const [maxAttempts, setMaxAttempts] = useState<number | ''>('')
+  const [lessonTag, setLessonTag] = useState('')
   const [shuffleQ, setShuffleQ] = useState(false)
   const [shuffleA, setShuffleA] = useState(false)
   const [showResult, setShowResult] = useState(true)
@@ -138,6 +140,7 @@ export function ExamCreator({ userId }: ExamCreatorProps) {
           duration_minutes: duration,
           access_code: accessCode.trim() || null,
           max_attempts: maxAttempts || null,
+          lesson_tag: lessonTag || null,
           shuffle_questions: shuffleQ,
           shuffle_answers: shuffleA,
           show_result_immediately: showResult,
@@ -232,6 +235,27 @@ export function ExamCreator({ userId }: ExamCreatorProps) {
               />
             </div>
           </div>
+
+          {subject === 'tin_hoc' && (
+            <div className="space-y-1.5">
+              <Label>Bài học (tùy chọn)</Label>
+              <Select value={lessonTag || 'none'} onValueChange={v => setLessonTag(!v || v === 'none' ? '' : v)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Chọn bài học..." />
+                </SelectTrigger>
+                <SelectContent className="max-h-72">
+                  <SelectItem value="none">— Không gắn bài —</SelectItem>
+                  {CURRICULUM.find(g => g.grade === grade)?.chapters.flatMap(ch =>
+                    ch.lessons.map(l => (
+                      <SelectItem key={l.tag} value={l.tag}>
+                        Bài {l.lessonNumber}: {l.title}
+                      </SelectItem>
+                    ))
+                  )}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
 
           <div className="grid grid-cols-3 gap-4">
             {[

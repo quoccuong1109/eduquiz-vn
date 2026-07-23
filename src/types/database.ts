@@ -47,6 +47,7 @@ export interface Exam {
   max_attempts: number | null
   access_code: string | null
   is_published: boolean
+  lesson_tag: string | null
   created_at: string
 }
 
