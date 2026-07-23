@@ -1,5 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
-import { createServiceClient } from '@/lib/supabase/server'
+import { createClient as createSupabaseClient } from '@supabase/supabase-js'
 import { NextResponse } from 'next/server'
 
 async function requireAdmin() {
@@ -9,6 +9,13 @@ async function requireAdmin() {
   const { data: profile } = await supabase.from('users').select('role').eq('id', user.id).single()
   if (profile?.role !== 'admin') return null
   return user
+}
+
+function getService() {
+  return createSupabaseClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  )
 }
 
 export async function POST(request: Request) {
@@ -21,7 +28,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Thiếu thông tin bắt buộc' }, { status: 400 })
     }
 
-    const service = createServiceClient()
+    const service = getService()
     const { data: authData, error: authError } = await service.auth.admin.createUser({
       email,
       password,
@@ -30,7 +37,6 @@ export async function POST(request: Request) {
     })
     if (authError) return NextResponse.json({ error: authError.message }, { status: 400 })
 
-    // Upsert profile row
     await service.from('users').upsert({
       id: authData.user.id,
       email,

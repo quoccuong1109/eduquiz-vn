@@ -1,5 +1,5 @@
-import { createServiceClient } from '@/lib/supabase/server'
 import { createClient } from '@/lib/supabase/server'
+import { createClient as createSupabaseClient } from '@supabase/supabase-js'
 import { redirect } from 'next/navigation'
 import { AdminUsersTable } from '@/components/admin/users-table'
 
@@ -11,12 +11,18 @@ export default async function AdminUsersPage() {
   const { data: profile } = await supabase.from('users').select('role').eq('id', user.id).single()
   if (profile?.role !== 'admin') redirect('/dashboard')
 
-  // Service client bypasses RLS to fetch all users
-  const service = createServiceClient()
-  const { data: users } = await service
+  // Service client bypasses RLS — use direct import (works in App Router)
+  const service = createSupabaseClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  )
+
+  const { data: users, error } = await service
     .from('users')
     .select('id, email, full_name, role, created_at')
     .order('created_at', { ascending: false })
+
+  if (error) console.error('[admin/users] fetch error:', error.message)
 
   return (
     <div className="space-y-4">
