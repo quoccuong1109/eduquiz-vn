@@ -10,9 +10,11 @@ export default async function AdminQuestionsPage() {
 
   return (
     <div className="space-y-4">
-      <div>
-        <h1 className="text-2xl font-bold">Câu hỏi</h1>
-        <p className="text-muted-foreground text-sm mt-1">{questions?.length ?? 0} câu hỏi trong hệ thống</p>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold">Câu hỏi</h1>
+          <p className="text-muted-foreground text-sm mt-1">{questions?.length ?? 0} câu hỏi trong hệ thống</p>
+        </div>
       </div>
       <AdminQuestionsTable questions={questions ?? []} />
     </div>
