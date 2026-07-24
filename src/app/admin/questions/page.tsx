@@ -3,10 +3,13 @@ import { AdminQuestionsTable } from '@/components/admin/questions-table'
 
 export default async function AdminQuestionsPage() {
   const supabase = await createClient()
-  const { data: questions } = await supabase
-    .from('questions')
-    .select('id, question_text, subject, grade, difficulty, correct_answer, is_public, created_at, created_by')
-    .order('created_at', { ascending: false })
+  const [{ data: { user } }, { data: questions }] = await Promise.all([
+    supabase.auth.getUser(),
+    supabase
+      .from('questions')
+      .select('id, question_text, subject, grade, difficulty, correct_answer, is_public, created_at, created_by')
+      .order('created_at', { ascending: false }),
+  ])
 
   return (
     <div className="space-y-4">
@@ -16,7 +19,7 @@ export default async function AdminQuestionsPage() {
           <p className="text-muted-foreground text-sm mt-1">{questions?.length ?? 0} câu hỏi trong hệ thống</p>
         </div>
       </div>
-      <AdminQuestionsTable questions={questions ?? []} />
+      <AdminQuestionsTable questions={questions ?? []} userId={user?.id ?? ''} />
     </div>
   )
 }

@@ -163,15 +163,123 @@ function parseRow(raw: Record<string, unknown>, rowNum: number): ParsedQuestion 
 }
 
 function downloadTemplate() {
-  const ws = XLSX.utils.aoa_to_sheet([
-    ['Câu hỏi', 'Đáp án A', 'Đáp án B', 'Đáp án C', 'Đáp án D', 'Đáp án đúng', 'Môn học', 'Lớp', 'Độ khó', 'Giải thích', 'Tags'],
-    ['Hàm nào trong Excel dùng để tính tổng?', '=COUNT()', '=SUM()', '=AVERAGE()', '=MAX()', 'B', 'tin_hoc', '12', 'easy', 'Hàm SUM dùng để tính tổng các giá trị số.', 'excel, hàm, sum'],
-    ['Phím tắt nào dùng để lưu file trong Windows?', 'Ctrl+C', 'Ctrl+V', 'Ctrl+S', 'Ctrl+Z', 'C', 'tin_hoc', '10', 'easy', 'Ctrl+S là phím tắt lưu file phổ biến.', ''],
-  ])
-  ws['!cols'] = [{ wch: 40 }, { wch: 20 }, { wch: 20 }, { wch: 20 }, { wch: 20 }, { wch: 12 }, { wch: 12 }, { wch: 8 }, { wch: 12 }, { wch: 30 }, { wch: 20 }]
   const wb = XLSX.utils.book_new()
+
+  // ── Sheet 1: Hướng dẫn ──────────────────────────────────
+  const guide = XLSX.utils.aoa_to_sheet([
+    ['TEMPLATE NHẬP CÂU HỎI — EDUQUIZ VN'],
+    ['Dùng sheet «Câu hỏi» để nhập dữ liệu · Mỗi dòng = 1 câu hỏi · Không xóa dòng tiêu đề'],
+    [],
+    ['Cột', 'Tên trường', 'Bắt buộc?', 'Mô tả / Giá trị hợp lệ'],
+    ['A', 'question_text', 'Có', 'Nội dung câu hỏi'],
+    ['B', 'option_a', 'Có', 'Đáp án A'],
+    ['C', 'option_b', 'Có', 'Đáp án B'],
+    ['D', 'option_c', 'Có', 'Đáp án C'],
+    ['E', 'option_d', 'Có', 'Đáp án D'],
+    ['F', 'correct_answer', 'Có', 'Chữ in hoa: A, B, C hoặc D'],
+    ['G', 'difficulty', 'Có', 'easy | medium | hard'],
+    ['H', 'subject', 'Có', 'tin_hoc | toan | vat_ly | hoa_hoc | sinh_hoc | tieng_anh'],
+    ['I', 'grade', 'Có', '10, 11 hoặc 12'],
+    ['J', 'tags', 'Có', 'Tag bài học cách nhau dấu phẩy. VD: tin12-b7,tin12-b8 (xem sheet Danh sách Tag)'],
+    ['K', 'explanation', 'Không', 'Giải thích đáp án đúng (hiển thị sau khi học sinh làm)'],
+    ['L', 'is_public', 'Không', 'TRUE = câu hỏi công khai cho Luyện tập · FALSE = chỉ dùng trong đề thi (mặc định FALSE)'],
+    [],
+    ['LƯU Ý QUAN TRỌNG'],
+    ['1. Không xóa hoặc đổi thứ tự các cột — hệ thống đọc theo vị trí cột'],
+    ['2. Nhập câu hỏi từ dòng 3 trở đi trong sheet «Câu hỏi» (dòng 1=tiêu đề, dòng 2=ví dụ)'],
+    ['3. Cột tags: tra cứu tag đúng ở sheet «Danh sách Tag»'],
+    ['4. Sau khi điền xong → Ngân hàng câu hỏi → Import file → chọn file này'],
+  ])
+  guide['!cols'] = [{ wch: 6 }, { wch: 20 }, { wch: 10 }, { wch: 70 }]
+  XLSX.utils.book_append_sheet(wb, guide, 'Hướng dẫn')
+
+  // ── Sheet 2: Câu hỏi ────────────────────────────────────
+  const headers = [
+    'question_text', 'option_a', 'option_b', 'option_c', 'option_d',
+    'correct_answer', 'difficulty', 'subject', 'grade', 'tags', 'explanation', 'is_public',
+  ]
+  const example = [
+    'Thẻ HTML nào dùng để tạo tiêu đề lớn nhất?',
+    '<h6>', '<h1>', '<title>', '<head>',
+    'B', 'easy', 'tin_hoc', 12, 'tin12-b7',
+    '<h1> là thẻ tiêu đề lớn nhất trong HTML (heading level 1)',
+    true,
+  ]
+  const ws = XLSX.utils.aoa_to_sheet([headers, example])
+  ws['!cols'] = [
+    { wch: 45 }, { wch: 24 }, { wch: 24 }, { wch: 24 }, { wch: 24 },
+    { wch: 12 }, { wch: 14 }, { wch: 12 }, { wch: 8 }, { wch: 20 }, { wch: 35 }, { wch: 12 },
+  ]
   XLSX.utils.book_append_sheet(wb, ws, 'Câu hỏi')
-  XLSX.writeFile(wb, 'mau_import_cau_hoi.xlsx')
+
+  // ── Sheet 3: Danh sách Tag ───────────────────────────────
+  const TAG_DATA: [number, string, number, string, string][] = []
+  const CURRICULUM_FLAT: [number, string, [number, string][]][] = [
+    [10, 'Máy tính và xã hội tri thức', [[1,'Thông tin và xử lí thông tin'],[2,'Vai trò của thiết bị thông minh'],[3,'Một số kiểu dữ liệu'],[4,'Hệ nhị phân và dữ liệu số nguyên'],[5,'Dữ liệu logic'],[6,'Dữ liệu âm thanh và hình ảnh'],[7,'Thực hành sử dụng thiết bị số']]],
+    [10, 'Mạng máy tính và Internet', [[8,'Mạng máy tính trong cuộc sống'],[9,'An toàn trên không gian mạng'],[10,'Thực hành khai thác tài nguyên']]],
+    [10, 'Đạo đức, pháp luật và văn hoá', [[11,'Ứng xử trên môi trường số']]],
+    [10, 'Ứng dụng tin học', [[12,'Phần mềm thiết kế đồ hoạ'],[13,'Bổ sung các đối tượng đồ hoạ'],[14,'Làm việc với đối tượng đường và văn bản'],[15,'Hoàn thiện hình ảnh đồ hoạ']]],
+    [10, 'Giải quyết vấn đề — Python', [[16,'Ngôn ngữ lập trình bậc cao và Python'],[17,'Biến và lệnh gán'],[18,'Các lệnh vào ra đơn giản'],[19,'Câu lệnh rẽ nhánh'],[20,'Câu lệnh lặp for'],[21,'Câu lệnh lặp while'],[22,'Kiểu dữ liệu danh sách'],[23,'Một số lệnh làm việc với danh sách'],[24,'Xâu kí tự'],[25,'Một số lệnh làm việc với xâu kí tự'],[26,'Hàm trong Python'],[27,'Tham số của hàm'],[28,'Phạm vi của biến'],[29,'Nhận biết lỗi chương trình'],[30,'Kiểm thử và gỡ lỗi'],[31,'Thực hành viết chương trình đơn giản'],[32,'Ôn tập lập trình Python']]],
+    [10, 'Hướng nghiệp với tin học', [[33,'Nghề thiết kế đồ hoạ máy tính'],[34,'Nghề phát triển phần mềm']]],
+    [11, 'Máy tính và xã hội tri thức', [[1,'Hệ điều hành'],[2,'Thực hành sử dụng hệ điều hành'],[3,'Phần mềm nguồn mở'],[4,'Bên trong máy tính'],[5,'Kết nối máy tính với thiết bị số']]],
+    [11, 'Tổ chức lưu trữ và trao đổi thông tin', [[6,'Lưu trữ và chia sẻ tệp tin'],[7,'Thực hành tìm kiếm thông tin'],[8,'Thực hành sử dụng thư điện tử']]],
+    [11, 'Đạo đức, pháp luật và văn hoá', [[9,'Giao tiếp an toàn trên Internet']]],
+    [11, 'Giới thiệu các hệ cơ sở dữ liệu', [[10,'Lưu trữ dữ liệu và khai thác thông tin'],[11,'Cơ sở dữ liệu'],[12,'Hệ quản trị cơ sở dữ liệu'],[13,'Cơ sở dữ liệu quan hệ'],[14,'SQL — ngôn ngữ truy vấn có cấu trúc'],[15,'Bảo mật và an toàn hệ cơ sở dữ liệu']]],
+    [11, 'Hướng nghiệp với tin học', [[16,'Công việc quản trị cơ sở dữ liệu']]],
+    [11, 'Kĩ thuật lập trình (CS)', [[17,'Dữ liệu mảng một chiều và hai chiều'],[18,'Thực hành dữ liệu mảng'],[19,'Bài toán tìm kiếm'],[20,'Thực hành tìm kiếm'],[21,'Các thuật toán sắp xếp'],[22,'Thực hành sắp xếp'],[23,'Kiểm thử và đánh giá chương trình'],[24,'Đánh giá độ phức tạp thời gian'],[25,'Thực hành xác định độ phức tạp'],[26,'Phương pháp làm mịn dần'],[27,'Thực hành làm mịn dần'],[28,'Thiết kế chương trình theo mô đun'],[29,'Thực hành thiết kế theo mô đun'],[30,'Thiết lập thư viện'],[31,'Thực hành thiết lập thư viện']]],
+    [12, 'Máy tính và xã hội tri thức', [[1,'Làm quen với Trí tuệ nhân tạo'],[2,'Trí tuệ nhân tạo trong khoa học và đời sống']]],
+    [12, 'Mạng máy tính và Internet', [[3,'Một số thiết bị mạng thông dụng'],[4,'Giao thức mạng'],[5,'Thực hành chia sẻ tài nguyên trên mạng']]],
+    [12, 'Đạo đức, pháp luật và văn hoá', [[6,'Giao tiếp và ứng xử trong không gian mạng']]],
+    [12, 'HTML & CSS', [[7,'HTML và cấu trúc trang web'],[8,'Định dạng văn bản'],[9,'Tạo danh sách, bảng'],[10,'Tạo liên kết'],[11,'Chèn tệp tin đa phương tiện'],[12,'Tạo biểu mẫu'],[13,'Khái niệm, vai trò của CSS'],[14,'Định dạng văn bản bằng CSS'],[15,'Tạo màu cho chữ và nền'],[16,'Định dạng khung'],[17,'Các mức ưu tiên của bộ chọn'],[18,'Thực hành tổng hợp thiết kế trang web']]],
+    [12, 'Hướng nghiệp với tin học', [[19,'Dịch vụ sửa chữa và bảo trì máy tính'],[20,'Nhóm nghề quản trị CNTT'],[21,'Hội thảo hướng nghiệp']]],
+    [12, 'Mạng máy tính (CS)', [[22,'Tìm hiểu thiết bị mạng'],[23,'Đường truyền mạng và ứng dụng'],[24,'Sơ bộ về thiết kế mạng']]],
+    [12, 'Giải quyết vấn đề với MTTT (CS)', [[25,'Làm quen với Học máy'],[26,'Làm quen với Khoa học dữ liệu'],[27,'Máy tính và Khoa học dữ liệu'],[28,'Thực hành trích rút thông tin và tri thức'],[29,'Mô phỏng trong giải quyết vấn đề'],[30,'Ứng dụng mô phỏng trong giáo dục']]],
+  ]
+  for (const [grade, chapter, lessons] of CURRICULUM_FLAT) {
+    for (const [num, title] of lessons) {
+      TAG_DATA.push([grade, chapter, num, title, `tin${grade}-b${num}`])
+    }
+  }
+  const tagSheet = XLSX.utils.aoa_to_sheet([
+    ['Lớp', 'Chủ đề', 'Bài số', 'Tên bài học', 'Tag (dùng trong cột J)'],
+    ...TAG_DATA,
+  ])
+  tagSheet['!cols'] = [{ wch: 6 }, { wch: 42 }, { wch: 8 }, { wch: 55 }, { wch: 18 }]
+  XLSX.utils.book_append_sheet(wb, tagSheet, 'Danh sách Tag')
+
+  // ── Sheet 4: Prompt AI ───────────────────────────────────
+  const promptSheet = XLSX.utils.aoa_to_sheet([
+    ['PROMPT MẪU CHO AI (thay giá trị trong [ ] trước khi dùng)'],
+    [],
+    [`Hãy tạo cho tôi [SỐ_CÂU] câu hỏi trắc nghiệm 4 lựa chọn (A/B/C/D) cho môn Tin học:
+
+Lớp: [10 / 11 / 12]
+Bài: Bài [SỐ_BÀI] - [TÊN_BÀI]
+Tag: [TAG] (ví dụ: tin12-b7)
+Độ khó: pha trộn easy 40% / medium 40% / hard 20%
+
+Trả về ĐÚNG định dạng CSV sau (không giải thích thêm):
+
+question_text,option_a,option_b,option_c,option_d,correct_answer,difficulty,subject,grade,tags,explanation,is_public
+
+Lưu ý:
+- Mỗi câu = 1 dòng CSV
+- Nội dung có dấu phẩy thì đặt trong dấu ngoặc kép
+- correct_answer: chỉ A/B/C/D (in hoa)
+- difficulty: easy / medium / hard
+- subject: tin_hoc
+- grade: 10, 11 hoặc 12 (số)
+- tags: [TAG] (ví dụ tin12-b7)
+- explanation: 1-2 câu giải thích ngắn
+- is_public: TRUE
+
+Ví dụ 1 dòng hợp lệ:
+"Thẻ HTML nào dùng để tạo tiêu đề lớn nhất?",<h6>,<h1>,<title>,<head>,B,easy,tin_hoc,12,tin12-b7,"<h1> là thẻ tiêu đề lớn nhất trong HTML",TRUE`],
+  ])
+  promptSheet['!cols'] = [{ wch: 110 }]
+  XLSX.utils.book_append_sheet(wb, promptSheet, 'Prompt AI gợi ý')
+
+  XLSX.writeFile(wb, 'template_cauhoi_eduquiz.xlsx')
 }
 
 interface QuestionManagerProps {

@@ -21,7 +21,7 @@ function getService() {
 
 const VALID_ANSWERS = new Set(['A', 'B', 'C', 'D'])
 const VALID_DIFFICULTIES = new Set(['easy', 'medium', 'hard'])
-const VALID_SUBJECTS = new Set(['tin_hoc', 'toan', 'vat_ly', 'hoa_hoc', 'sinh_hoc', 'tieng_anh'])
+const VALID_SUBJECTS = new Set(['tin_hoc', 'toan', 'vat_ly', 'hoa_hoc', 'sinh_hoc', 'sinh_hoc', 'tieng_anh', 'ngu_van', 'lich_su', 'dia_ly', 'gdcd'])
 const VALID_GRADES = new Set([10, 11, 12])
 
 interface QuestionRow {
@@ -66,7 +66,7 @@ export async function POST(request: Request) {
         'correct_answer', 'difficulty', 'subject', 'grade', 'tags',
         'explanation', 'is_public',
       ],
-      range: 1, // skip header row (row 1)
+      range: 2, // skip header (row 1) and example (row 2); data starts row 3
       defval: '',
     })
 
@@ -75,7 +75,7 @@ export async function POST(request: Request) {
 
     for (let i = 0; i < rows.length; i++) {
       const r = rows[i]
-      const rowNum = i + 3 // row 1 = header, row 2 = example, data starts row 3
+      const rowNum = i + 3 // row 1=header, row 2=example, row 3=first data row
 
       const q_text = String(r.question_text ?? '').trim()
       const opt_a   = String(r.option_a ?? '').trim()
@@ -92,10 +92,6 @@ export async function POST(request: Request) {
 
       // Skip completely empty rows
       if (!q_text && !opt_a && !opt_b) continue
-
-      // Skip the example row (row 2 in sheet = index 0 in rows since range=1)
-      // Actually range:1 skips row 1 (header), so index 0 = row 2 = example row
-      if (i === 0 && q_text === 'Ngôn ngữ đánh dấu được dùng để tạo cấu trúc trang web là gì?') continue
 
       const rowErrors: string[] = []
       if (!q_text) rowErrors.push('Thiếu câu hỏi')
