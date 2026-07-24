@@ -2,24 +2,21 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { toast } from 'sonner'
-import { GraduationCap, BookOpen, Loader2 } from 'lucide-react'
+import { GraduationCap, Loader2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
-type Role = 'teacher' | 'student'
+type Role = 'teacher'
 
 export function RegisterForm() {
   const router = useRouter()
-  const searchParams = useSearchParams()
-  const defaultRole = (searchParams.get('role') as Role) || 'student'
-
-  const [role, setRole] = useState<Role>(defaultRole)
+  const [role] = useState<Role>('teacher')
   const [fullName, setFullName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -81,39 +78,18 @@ export function RegisterForm() {
 
         <Card className="border-0 shadow-lg">
           <CardHeader className="text-center pb-2">
-            <CardTitle className="text-2xl">Tạo tài khoản</CardTitle>
-            <CardDescription>Bắt đầu miễn phí ngay hôm nay</CardDescription>
+            <CardTitle className="text-2xl">Tạo tài khoản Giáo viên</CardTitle>
+            <CardDescription>
+              Tài khoản học sinh do giáo viên cấp phát.{' '}
+              <Link href="/login" className="text-blue-600 hover:underline">Đã có tài khoản?</Link>
+            </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div>
-              <Label className="text-sm mb-2 block">Bạn là:</Label>
-              <div className="grid grid-cols-2 gap-3">
-                <button
-                  type="button"
-                  onClick={() => setRole('teacher')}
-                  className={cn(
-                    'flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all',
-                    role === 'teacher' ? 'border-blue-600 bg-blue-50' : 'border-gray-200 hover:border-blue-200'
-                  )}
-                >
-                  <GraduationCap className={cn('w-6 h-6', role === 'teacher' ? 'text-blue-600' : 'text-gray-400')} />
-                  <span className={cn('text-sm font-medium', role === 'teacher' ? 'text-blue-600' : 'text-gray-600')}>
-                    Giáo viên
-                  </span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setRole('student')}
-                  className={cn(
-                    'flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all',
-                    role === 'student' ? 'border-green-600 bg-green-50' : 'border-gray-200 hover:border-green-200'
-                  )}
-                >
-                  <BookOpen className={cn('w-6 h-6', role === 'student' ? 'text-green-600' : 'text-gray-400')} />
-                  <span className={cn('text-sm font-medium', role === 'student' ? 'text-green-600' : 'text-gray-600')}>
-                    Học sinh
-                  </span>
-                </button>
+            <div className="flex items-center gap-3 p-3 rounded-xl border-2 border-blue-200 bg-blue-50">
+              <GraduationCap className="w-6 h-6 text-blue-600 flex-shrink-0" />
+              <div>
+                <p className="text-sm font-medium text-blue-800">Đăng ký với vai trò Giáo viên</p>
+                <p className="text-xs text-blue-600">Sau khi đăng ký, bạn có thể tạo lớp và cấp tài khoản học sinh</p>
               </div>
             </div>
 
@@ -156,11 +132,11 @@ export function RegisterForm() {
               </div>
               <Button
                 type="submit"
-                className={cn('w-full text-white', role === 'teacher' ? 'bg-blue-600 hover:bg-blue-700' : 'bg-green-600 hover:bg-green-700')}
+                className="w-full text-white bg-blue-600 hover:bg-blue-700"
                 disabled={loading}
               >
                 {loading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                Tạo tài khoản {role === 'teacher' ? 'Giáo viên' : 'Học sinh'}
+                Tạo tài khoản Giáo viên
               </Button>
             </form>
 

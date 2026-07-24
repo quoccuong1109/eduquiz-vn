@@ -11,6 +11,7 @@ export interface User {
   role: UserRole
   school: string | null
   email: string | null
+  created_by: string | null
   created_at: string
 }
 
@@ -98,6 +99,28 @@ export interface AttemptAnswer {
   selected_answer: AnswerOption | null
   is_correct: boolean | null
   answered_at: string | null
+}
+
+export interface Assignment {
+  id: string
+  class_id: string
+  exam_id: string
+  title: string
+  instructions: string | null
+  due_date: string | null
+  created_by: string
+  created_at: string
+}
+
+export interface Contest {
+  id: string
+  class_id: string
+  exam_id: string
+  title: string
+  start_time: string
+  end_time: string
+  created_by: string
+  created_at: string
 }
 
 // Extended types với joins

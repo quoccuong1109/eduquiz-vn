@@ -58,6 +58,7 @@ export function Navbar({ user }: NavbarProps) {
             <Link href="/teacher/exams" className={cn(buttonVariants({ variant: 'ghost', size: 'sm' }))}>Đề thi</Link>
             <Link href="/teacher/questions" className={cn(buttonVariants({ variant: 'ghost', size: 'sm' }))}>Câu hỏi</Link>
             <Link href="/teacher/classes" className={cn(buttonVariants({ variant: 'ghost', size: 'sm' }))}>Lớp học</Link>
+            <Link href="/teacher/students" className={cn(buttonVariants({ variant: 'ghost', size: 'sm' }))}>Học sinh</Link>
           </nav>
         )}
 
@@ -65,8 +66,9 @@ export function Navbar({ user }: NavbarProps) {
         {user.role === 'teacher' && (
           <nav className="hidden md:flex items-center gap-1">
             <Link href="/teacher/exams" className={cn(buttonVariants({ variant: 'ghost', size: 'sm' }))}>Đề thi</Link>
-            <Link href="/teacher/questions" className={cn(buttonVariants({ variant: 'ghost', size: 'sm' }))}>Ngân hàng câu hỏi</Link>
+            <Link href="/teacher/questions" className={cn(buttonVariants({ variant: 'ghost', size: 'sm' }))}>Câu hỏi</Link>
             <Link href="/teacher/classes" className={cn(buttonVariants({ variant: 'ghost', size: 'sm' }))}>Lớp học</Link>
+            <Link href="/teacher/students" className={cn(buttonVariants({ variant: 'ghost', size: 'sm' }))}>Học sinh</Link>
           </nav>
         )}
 

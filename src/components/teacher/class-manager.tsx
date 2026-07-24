@@ -5,11 +5,11 @@ import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
+import { Card, CardContent } from '@/components/ui/card'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { toast } from 'sonner'
-import { Plus, Users, Trash2, UserPlus, Hash, Loader2 } from 'lucide-react'
+import Link from 'next/link'
+import { Plus, Users, Trash2, Hash, Loader2, ChevronRight } from 'lucide-react'
 import type { Class } from '@/types/database'
 
 interface ClassWithStudents extends Class {
@@ -25,10 +25,8 @@ export function ClassManager({ userId }: ClassManagerProps) {
   const [classes, setClasses] = useState<ClassWithStudents[]>([])
   const [loading, setLoading] = useState(true)
   const [createOpen, setCreateOpen] = useState(false)
-  const [addStudentOpen, setAddStudentOpen] = useState<string | null>(null)
   const [className, setClassName] = useState('')
   const [schoolYear, setSchoolYear] = useState('2025-2026')
-  const [studentEmail, setStudentEmail] = useState('')
   const [saving, setSaving] = useState(false)
   const supabase = createClient()
 
@@ -69,29 +67,6 @@ export function ClassManager({ userId }: ClassManagerProps) {
       loadClasses()
     }
     setSaving(false)
-  }
-
-  async function handleAddStudent(classId: string) {
-    if (!studentEmail.trim()) { toast.error('Vui lòng nhập email học sinh'); return }
-    setSaving(true)
-    try {
-        // Dùng API route (service role) để tìm user theo email
-      const res = await fetch('/api/find-user', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: studentEmail.trim(), classId }),
-      })
-      const result = await res.json()
-      if (!res.ok) throw new Error(result.error)
-      toast.success(`Đã thêm ${studentEmail} vào lớp`)
-      setStudentEmail('')
-      setAddStudentOpen(null)
-      loadClasses()
-    } catch (error: unknown) {
-      toast.error(error instanceof Error ? error.message : 'Không tìm thấy học sinh')
-    } finally {
-      setSaving(false)
-    }
   }
 
   async function handleDeleteClass(id: string) {
@@ -158,34 +133,11 @@ export function ClassManager({ userId }: ClassManagerProps) {
                     </div>
                   </div>
                   <div className="flex gap-2">
-                    <Dialog open={addStudentOpen === cls.id} onOpenChange={o => setAddStudentOpen(o ? cls.id : null)}>
-                      <DialogTrigger render={<Button size="sm" variant="outline" />}>
-                        <UserPlus className="w-3.5 h-3.5 mr-1" /> Thêm học sinh
-                      </DialogTrigger>
-                      <DialogContent>
-                        <DialogHeader>
-                          <DialogTitle>Thêm học sinh vào {cls.name}</DialogTitle>
-                        </DialogHeader>
-                        <div className="space-y-3 pt-2">
-                          <p className="text-sm text-gray-500">
-                            Hoặc chia sẻ mã lớp <strong className="font-mono text-blue-600">{cls.join_code}</strong> để học sinh tự tham gia.
-                          </p>
-                          <div className="space-y-1.5">
-                            <Label>Email học sinh</Label>
-                            <Input
-                              type="email"
-                              placeholder="hocsinh@example.com"
-                              value={studentEmail}
-                              onChange={e => setStudentEmail(e.target.value)}
-                              onKeyDown={e => e.key === 'Enter' && handleAddStudent(cls.id)}
-                            />
-                          </div>
-                          <Button onClick={() => handleAddStudent(cls.id)} disabled={saving} className="w-full bg-blue-600 hover:bg-blue-700">
-                            {saving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />} Thêm vào lớp
-                          </Button>
-                        </div>
-                      </DialogContent>
-                    </Dialog>
+                    <Link href={`/teacher/classes/${cls.id}`}>
+                      <Button size="sm" variant="outline" className="gap-1">
+                        Quản lý <ChevronRight className="w-3.5 h-3.5" />
+                      </Button>
+                    </Link>
                     <Button size="icon" variant="ghost" onClick={() => handleDeleteClass(cls.id)}
                       className="w-8 h-8 text-gray-400 hover:text-red-600">
                       <Trash2 className="w-3.5 h-3.5" />

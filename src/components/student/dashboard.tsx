@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
-import { BookOpen, Trophy, Clock, ArrowRight, Hash, GraduationCap } from 'lucide-react'
+import { BookOpen, Trophy, Clock, ArrowRight, Hash, GraduationCap, Zap, CalendarCheck } from 'lucide-react'
 import type { User, Attempt } from '@/types/database'
 import { format } from 'date-fns'
 import { vi } from 'date-fns/locale'
@@ -22,24 +22,56 @@ interface AttemptWithExam extends Attempt {
   exams: { title: string; subject: string }
 }
 
+interface ContestItem {
+  id: string
+  title: string
+  start_time: string
+  end_time: string
+  exams: { title: string }
+  classes: { name: string }
+}
+
+interface AssignmentItem {
+  id: string
+  title: string
+  due_date: string | null
+  exams: { id: string; title: string }
+  classes: { name: string }
+}
+
 export function StudentDashboard({ user }: StudentDashboardProps) {
   const router = useRouter()
   const [attempts, setAttempts] = useState<AttemptWithExam[]>([])
+  const [contests, setContests] = useState<ContestItem[]>([])
+  const [assignments, setAssignments] = useState<AssignmentItem[]>([])
   const [accessCode, setAccessCode] = useState('')
   const [joining, setJoining] = useState(false)
   const supabase = createClient()
 
   useEffect(() => {
-    async function loadAttempts() {
-      const { data } = await supabase
-        .from('attempts')
-        .select('*, exams(title, subject)')
-        .eq('student_id', user.id)
-        .order('started_at', { ascending: false })
-        .limit(10)
-      setAttempts((data || []) as AttemptWithExam[])
+    async function load() {
+      const [attRes, contestRes, assignRes] = await Promise.all([
+        supabase
+          .from('attempts')
+          .select('*, exams(title, subject)')
+          .eq('student_id', user.id)
+          .order('started_at', { ascending: false })
+          .limit(10),
+        supabase
+          .from('contests')
+          .select('id, title, start_time, end_time, exams(title), classes(name)')
+          .gte('end_time', new Date().toISOString())
+          .order('start_time'),
+        supabase
+          .from('assignments')
+          .select('id, title, due_date, exams(id, title), classes(name)')
+          .order('due_date', { ascending: true, nullsFirst: false }),
+      ])
+      setAttempts((attRes.data || []) as AttemptWithExam[])
+      setContests((contestRes.data || []) as unknown as ContestItem[])
+      setAssignments((assignRes.data || []) as unknown as AssignmentItem[])
     }
-    loadAttempts()
+    load()
   }, [user.id])
 
   async function handleJoinByCode() {
@@ -125,6 +157,74 @@ export function StudentDashboard({ user }: StudentDashboardProps) {
           </Card>
         ))}
       </div>
+
+      {/* Upcoming contests */}
+      {contests.length > 0 && (
+        <Card className="border-0 shadow-sm">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Trophy className="w-4 h-4 text-yellow-500" /> Cuộc thi sắp diễn ra
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-0">
+            <div className="divide-y">
+              {contests.slice(0, 3).map(c => {
+                const now = new Date()
+                const isLive = now >= new Date(c.start_time) && now <= new Date(c.end_time)
+                return (
+                  <Link
+                    key={c.id}
+                    href={`/student/contest/${c.id}`}
+                    className="flex items-center gap-4 px-6 py-3 hover:bg-gray-50 transition-colors"
+                  >
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-medium text-sm">{c.title}</span>
+                        {isLive && <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-medium">Đang diễn ra</span>}
+                      </div>
+                      <div className="text-xs text-gray-400 mt-0.5">
+                        {c.classes?.name} · {format(new Date(c.start_time), 'HH:mm dd/MM', { locale: vi })}
+                      </div>
+                    </div>
+                    <ArrowRight className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                  </Link>
+                )
+              })}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Assignments */}
+      {assignments.length > 0 && (
+        <Card className="border-0 shadow-sm">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <CalendarCheck className="w-4 h-4 text-blue-500" /> Bài tập được giao
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-0">
+            <div className="divide-y">
+              {assignments.slice(0, 3).map(a => (
+                <Link
+                  key={a.id}
+                  href={`/exam/${a.exams?.id}`}
+                  className="flex items-center gap-4 px-6 py-3 hover:bg-gray-50 transition-colors"
+                >
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-sm">{a.title}</p>
+                    <p className="text-xs text-gray-400 mt-0.5">
+                      {a.classes?.name}
+                      {a.due_date && ` · Hạn: ${format(new Date(a.due_date), 'HH:mm dd/MM', { locale: vi })}`}
+                    </p>
+                  </div>
+                  <ArrowRight className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                </Link>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Curriculum link */}
       <Link href="/student/curriculum"

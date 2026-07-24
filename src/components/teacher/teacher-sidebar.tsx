@@ -10,6 +10,7 @@ import {
   GraduationCap,
   LayoutDashboard,
   Users,
+  UserPlus,
   LogOut,
   BarChart3,
   PlusCircle,
@@ -53,6 +54,7 @@ const NAV: { label: string; items: NavItem[] }[] = [
       { title: 'Đề thi', url: '/teacher/exams', icon: ClipboardList },
       { title: 'Tạo đề thi', url: '/teacher/exams/create', icon: PlusCircle },
       { title: 'Lớp học', url: '/teacher/classes', icon: Users },
+      { title: 'Học sinh', url: '/teacher/students', icon: UserPlus },
     ],
   },
 ]
