@@ -73,7 +73,9 @@ export function Navbar({ user }: NavbarProps) {
         {/* Student nav */}
         {user.role === 'student' && (
           <nav className="hidden md:flex items-center gap-1">
+            <Link href="/student/curriculum" className={cn(buttonVariants({ variant: 'ghost', size: 'sm' }))}>Học theo bài</Link>
             <Link href="/student/practice" className={cn(buttonVariants({ variant: 'ghost', size: 'sm' }))}>Luyện tập</Link>
+            <Link href="/student/test" className={cn(buttonVariants({ variant: 'ghost', size: 'sm' }))}>Tự tạo đề</Link>
           </nav>
         )}
 

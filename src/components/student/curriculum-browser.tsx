@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { CURRICULUM, type Lesson } from '@/lib/curriculum'
 import { Badge } from '@/components/ui/badge'
-import { BookOpen, ChevronDown, ChevronRight, ClipboardList, Lock } from 'lucide-react'
+import { BookOpen, ChevronDown, ChevronRight, ClipboardList, Zap } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { User } from '@/types/database'
 
@@ -189,20 +189,24 @@ export function CurriculumBrowser({ user }: CurriculumBrowserProps) {
                               <div className="text-xs text-gray-400 mt-0.5">{exam.duration_minutes} phút</div>
                             )}
                           </div>
-                          {exam ? (
+                          <div className="flex-shrink-0 flex gap-1.5">
                             <Link
-                              href={`/exam/${exam.id}`}
-                              className="flex-shrink-0 px-3 py-1.5 rounded-lg bg-blue-600 text-white text-xs font-medium hover:bg-blue-700 transition-colors flex items-center gap-1.5"
+                              href={`/student/practice?lesson=${lesson.tag}`}
+                              className="px-3 py-1.5 rounded-lg bg-green-600 text-white text-xs font-medium hover:bg-green-700 transition-colors flex items-center gap-1.5"
                             >
-                              <BookOpen className="w-3.5 h-3.5" />
-                              Làm bài
+                              <Zap className="w-3.5 h-3.5" />
+                              Luyện tập
                             </Link>
-                          ) : (
-                            <div className="flex-shrink-0 px-3 py-1.5 rounded-lg bg-gray-100 text-gray-400 text-xs font-medium flex items-center gap-1.5 cursor-default">
-                              <Lock className="w-3.5 h-3.5" />
-                              Chưa có
-                            </div>
-                          )}
+                            {exam && (
+                              <Link
+                                href={`/exam/${exam.id}`}
+                                className="px-3 py-1.5 rounded-lg bg-blue-600 text-white text-xs font-medium hover:bg-blue-700 transition-colors flex items-center gap-1.5"
+                              >
+                                <BookOpen className="w-3.5 h-3.5" />
+                                Làm bài
+                              </Link>
+                            )}
+                          </div>
                         </div>
                       )
                     })}

@@ -7,7 +7,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Progress } from '@/components/ui/progress'
-import { CheckCircle2, XCircle, Shuffle, BookOpen, Loader2 } from 'lucide-react'
+import { CheckCircle2, XCircle, Shuffle, BookOpen, Loader2, ArrowLeft } from 'lucide-react'
+import Link from 'next/link'
 import type { Question, AnswerOption } from '@/types/database'
 import { cn } from '@/lib/utils'
 
@@ -28,9 +29,11 @@ const optionKeys: Record<string, string> = {
 
 interface PracticeModeProps {
   userId: string
+  lessonTag?: string
+  lessonTitle?: string
 }
 
-export function PracticeMode({ userId }: PracticeModeProps) {
+export function PracticeMode({ userId, lessonTag, lessonTitle }: PracticeModeProps) {
   const [questions, setQuestions] = useState<Question[]>([])
   const [loading, setLoading] = useState(false)
   const [subject, setSubject] = useState('all')
@@ -40,15 +43,34 @@ export function PracticeMode({ userId }: PracticeModeProps) {
   const [revealed, setRevealed] = useState(false)
   const [correct, setCorrect] = useState(0)
   const [total, setTotal] = useState(0)
+  const [noQuestions, setNoQuestions] = useState(false)
   const supabase = createClient()
+
+  // Auto-start khi có lessonTag
+  useEffect(() => {
+    if (lessonTag) loadQuestions()
+  }, [lessonTag])
 
   async function loadQuestions() {
     setLoading(true)
+    setNoQuestions(false)
     let query = supabase.from('questions').select('*').eq('is_public', true)
-    if (subject !== 'all') query = query.eq('subject', subject)
-    const { data } = await query.limit(20)
-    // Xáo trộn
+
+    if (lessonTag) {
+      query = query.contains('tags', [lessonTag])
+    } else {
+      if (subject !== 'all') query = query.eq('subject', subject)
+    }
+
+    const { data } = await query.limit(30)
     const shuffled = (data || []).sort(() => Math.random() - 0.5)
+
+    if (shuffled.length === 0) {
+      setNoQuestions(true)
+      setLoading(false)
+      return
+    }
+
     setQuestions(shuffled)
     setLoading(false)
     setStarted(true)
@@ -83,13 +105,42 @@ export function PracticeMode({ userId }: PracticeModeProps) {
     }
   }
 
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <Loader2 className="w-6 h-6 animate-spin text-blue-600" />
+        <span className="ml-2 text-gray-500">Đang tải câu hỏi...</span>
+      </div>
+    )
+  }
+
   if (!started) {
     return (
       <div className="space-y-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Luyện tập tự do</h1>
-          <p className="text-gray-500 text-sm mt-1">Thi thử từ ngân hàng câu hỏi công khai, không giới hạn lần</p>
+          {lessonTag && (
+            <Link href="/student/curriculum" className="inline-flex items-center gap-1.5 text-sm text-blue-600 hover:text-blue-700 mb-3">
+              <ArrowLeft className="w-3.5 h-3.5" /> Quay lại học theo bài
+            </Link>
+          )}
+          <h1 className="text-2xl font-bold text-gray-900">
+            {lessonTitle ? `Luyện tập: ${lessonTitle}` : 'Luyện tập tự do'}
+          </h1>
+          <p className="text-gray-500 text-sm mt-1">
+            {lessonTag
+              ? 'Luyện các câu hỏi trong bài học này, không giới hạn lần thử'
+              : 'Thi thử từ ngân hàng câu hỏi công khai, không giới hạn lần'}
+          </p>
         </div>
+
+        {noQuestions && (
+          <Card className="border-orange-200 bg-orange-50">
+            <CardContent className="p-5 text-center">
+              <p className="text-orange-700 font-medium">Chưa có câu hỏi cho bài này</p>
+              <p className="text-orange-600 text-sm mt-1">Giáo viên chưa thêm câu hỏi công khai cho bài học này.</p>
+            </CardContent>
+          </Card>
+        )}
 
         {total > 0 && (
           <Card className={cn('border-2', correct / total >= 0.8 ? 'border-green-200 bg-green-50' : 'border-blue-100 bg-blue-50')}>
@@ -107,20 +158,24 @@ export function PracticeMode({ userId }: PracticeModeProps) {
 
         <Card className="border-0 shadow-sm">
           <CardHeader className="pb-3">
-            <CardTitle className="text-base">Cài đặt luyện tập</CardTitle>
+            <CardTitle className="text-base">
+              {lessonTag ? 'Bắt đầu luyện tập' : 'Cài đặt luyện tập'}
+            </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="space-y-1.5">
-              <label className="text-sm font-medium text-gray-700">Chọn môn học</label>
-              <Select value={subject} onValueChange={(v) => v && setSubject(v)}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {SUBJECTS.map(s => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
+            {!lessonTag && (
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium text-gray-700">Chọn môn học</label>
+                <Select value={subject} onValueChange={(v) => v && setSubject(v)}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {SUBJECTS.map(s => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
             <Button
               onClick={loadQuestions}
               disabled={loading}
@@ -131,7 +186,7 @@ export function PracticeMode({ userId }: PracticeModeProps) {
               ) : (
                 <Shuffle className="w-4 h-4 mr-2" />
               )}
-              {total > 0 ? 'Luyện tập tiếp' : 'Bắt đầu luyện tập'}
+              {total > 0 ? 'Luyện tập lại' : 'Bắt đầu luyện tập'}
             </Button>
           </CardContent>
         </Card>
@@ -147,6 +202,7 @@ export function PracticeMode({ userId }: PracticeModeProps) {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="text-sm text-gray-500">
+          {lessonTitle && <span className="font-medium text-blue-600 mr-2">{lessonTitle}</span>}
           Câu <strong>{currentIdx + 1}</strong>/{questions.length}
         </div>
         <div className="flex items-center gap-3 text-sm">

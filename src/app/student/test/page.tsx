@@ -1,15 +1,10 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { Navbar } from '@/components/shared/navbar'
-import { PracticeMode } from '@/components/student/practice-mode'
-import { findLesson } from '@/lib/curriculum'
+import { CustomTest } from '@/components/student/custom-test'
 import type { User } from '@/types/database'
 
-export default async function PracticePage({
-  searchParams,
-}: {
-  searchParams: Promise<{ lesson?: string }>
-}) {
+export default async function CustomTestPage() {
   const supabase = await createClient()
   const { data: { user: authUser } } = await supabase.auth.getUser()
   if (!authUser) redirect('/login')
@@ -17,18 +12,11 @@ export default async function PracticePage({
   const { data: profile } = await supabase.from('users').select('*').eq('id', authUser.id).single()
   if (!profile) redirect('/login')
 
-  const { lesson } = await searchParams
-  const lessonInfo = lesson ? findLesson(lesson) : null
-
   return (
     <div className="min-h-screen bg-gray-50">
       <Navbar user={profile as User} />
       <main className="max-w-2xl mx-auto px-4 py-6">
-        <PracticeMode
-          userId={authUser.id}
-          lessonTag={lessonInfo?.lesson.tag}
-          lessonTitle={lessonInfo ? `Bài ${lessonInfo.lesson.lessonNumber}. ${lessonInfo.lesson.title}` : undefined}
-        />
+        <CustomTest userId={authUser.id} />
       </main>
     </div>
   )
